@@ -5,7 +5,7 @@ PKG_VERSION:=1.1.1
 PKG_RELEASE:=1
 
 PKG_LICENSE:=MIT
-PKG_MAINTAINER:=Your Name <your.email@example.com>
+PKG_MAINTAINER:=OQM contributors
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -19,9 +19,7 @@ define Package/luci-app-oqm
 endef
 
 define Package/luci-app-oqm/description
-  LuCI web interface for OQM (OpenWrt Quota Manager).
-  Provides a user-friendly interface to manage user quotas,
-  monitor traffic, and control internet access.
+  Native LuCI interface for OQM user, group, quota, DHCP and notification management.
 endef
 
 define Build/Compile
@@ -30,9 +28,8 @@ endef
 define Package/luci-app-oqm/install
 	$(INSTALL_DIR) $(1)/usr/lib/lua/luci/controller
 	$(INSTALL_DATA) ./luasrc/controller/oqm.lua $(1)/usr/lib/lua/luci/controller/
-
-	$(INSTALL_DIR) $(1)/usr/lib/lua/luci/view/oqm
-	$(INSTALL_DATA) ./luasrc/view/oqm/index.htm $(1)/usr/lib/lua/luci/view/oqm/
+	$(INSTALL_DIR) $(1)/www/luci-static/resources/view/oqm
+	$(INSTALL_DATA) ./htdocs/luci-static/resources/view/oqm/overview.js $(1)/www/luci-static/resources/view/oqm/
 endef
 
 $(eval $(call BuildPackage,luci-app-oqm))
