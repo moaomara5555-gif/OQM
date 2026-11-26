@@ -1,106 +1,70 @@
-.PHONY: build clean install test cross-compile
+.PHONY: build clean install test cross-compile compress release dev fmt lint help
 
 # Read version from VERSION file
 VERSION := $(shell cat VERSION 2>/dev/null || echo "dev")
 BINARY_NAME = oqm
 BUILD_DIR = build
+MIPSLE_ENV = GOOS=linux GOARCH=mipsle GOMIPS=softfloat CGO_ENABLED=0
+LDFLAGS = -s -w -X main.version=$(VERSION)
 
-# Build for current platform
+# Build for current platform (useful for local development)
 build:
-	@echo "Building $(BINARY_NAME)..."
-	go build -ldflags="-s -w -X main.version=$(VERSION)" -o $(BUILD_DIR)/$(BINARY_NAME) ./cmd/oqm
-
-# Build for OpenWrt targets
-cross-compile:
-	@echo "Cross-compiling for OpenWrt targets..."
 	@mkdir -p $(BUILD_DIR)
+	@echo "Building $(BINARY_NAME) for the current platform..."
+	go build -ldflags="$(LDFLAGS)" -o $(BUILD_DIR)/$(BINARY_NAME) ./cmd/oqm
 
-	# MIPS (most common OpenWrt routers)
-	GOOS=linux GOARCH=mips GOMIPS=softfloat CGO_ENABLED=0 \
-		go build -ldflags="-s -w -X main.version=$(VERSION)" \
-		-o $(BUILD_DIR)/$(BINARY_NAME)-mips ./cmd/oqm
+# The only release target: Linux MIPS little-endian OpenWrt routers
+cross-compile:
+	@mkdir -p $(BUILD_DIR)
+	@echo "Building $(BINARY_NAME) for linux/mipsle (soft-float)..."
+	$(MIPSLE_ENV) go build -ldflags="$(LDFLAGS)" -o $(BUILD_DIR)/$(BINARY_NAME)-mipsle ./cmd/oqm
 
-	# MIPSLE
-	GOOS=linux GOARCH=mipsle GOMIPS=softfloat CGO_ENABLED=0 \
-		go build -ldflags="-s -w -X main.version=$(VERSION)" \
-		-o $(BUILD_DIR)/$(BINARY_NAME)-mipsle ./cmd/oqm
-
-	# ARM (Raspberry Pi, etc)
-	GOOS=linux GOARCH=arm GOARM=7 CGO_ENABLED=0 \
-		go build -ldflags="-s -w -X main.version=$(VERSION)" \
-		-o $(BUILD_DIR)/$(BINARY_NAME)-arm ./cmd/oqm
-
-	# ARM64
-	GOOS=linux GOARCH=arm64 CGO_ENABLED=0 \
-		go build -ldflags="-s -w -X main.version=$(VERSION)" \
-		-o $(BUILD_DIR)/$(BINARY_NAME)-arm64 ./cmd/oqm
-
-	# x86_64 (PC Engines APU, etc)
-	GOOS=linux GOARCH=amd64 CGO_ENABLED=0 \
-		go build -ldflags="-s -w -X main.version=$(VERSION)" \
-		-o $(BUILD_DIR)/$(BINARY_NAME)-amd64 ./cmd/oqm
-
-	@echo "Cross-compilation complete!"
-	@ls -lh $(BUILD_DIR)
-
-# Compress binaries with UPX (optional)
+# Compress the MIPSLE release binary with UPX (optional)
 compress: cross-compile
-	@echo "Compressing binaries with UPX..."
-	@for file in $(BUILD_DIR)/$(BINARY_NAME)-*; do \
-		upx --best --lzma $$file 2>/dev/null || echo "UPX not available, skipping compression"; \
-	done
+	@command -v upx >/dev/null 2>&1 || { echo "UPX not available; skipping compression"; exit 0; }
+	upx --best --lzma $(BUILD_DIR)/$(BINARY_NAME)-mipsle
 
-# Install locally
 install: build
 	@echo "Installing $(BINARY_NAME) to /usr/local/bin..."
-	sudo cp $(BUILD_DIR)/$(BINARY_NAME) /usr/local/bin/
-	sudo chmod +x /usr/local/bin/$(BINARY_NAME)
+	sudo install -m 0755 $(BUILD_DIR)/$(BINARY_NAME) /usr/local/bin/$(BINARY_NAME)
 
-# Clean build artifacts
 clean:
 	@echo "Cleaning build artifacts..."
 	rm -rf $(BUILD_DIR)
 	go clean
 
-# Run tests
 test:
 	go test -v ./...
 
-# Create release archives
 release: cross-compile
-	@echo "Creating release archives..."
+	@echo "Creating MIPSLE release archive..."
 	@mkdir -p $(BUILD_DIR)/release
-	@for arch in mips mipsle arm arm64 amd64; do \
-		tar -czf $(BUILD_DIR)/release/$(BINARY_NAME)-$(VERSION)-$$arch.tar.gz \
-			-C $(BUILD_DIR) $(BINARY_NAME)-$$arch \
-			-C ../openwrt/files/etc/init.d oqm \
-			-C ../../../README.md ; \
-	done
-	@echo "Release archives created in $(BUILD_DIR)/release/"
+	tar -czf $(BUILD_DIR)/release/$(BINARY_NAME)-$(VERSION)-mipsle.tar.gz \
+		-C $(BUILD_DIR) $(BINARY_NAME)-mipsle \
+		-C ../openwrt/files/etc/init.d oqm \
+		-C ../../../ README.md
+	@echo "Created $(BUILD_DIR)/release/$(BINARY_NAME)-$(VERSION)-mipsle.tar.gz"
 
-# Development build with race detector
 dev:
+	@mkdir -p $(BUILD_DIR)
 	go build -race -o $(BUILD_DIR)/$(BINARY_NAME)-dev ./cmd/oqm
 
-# Format code
 fmt:
 	go fmt ./...
 	goimports -w .
 
-# Lint code
 lint:
 	golangci-lint run ./...
 
-# Show help
 help:
 	@echo "Available targets:"
-	@echo "  build          - Build for current platform"
-	@echo "  cross-compile  - Build for all OpenWrt architectures"
-	@echo "  compress       - Cross-compile and compress with UPX"
-	@echo "  install        - Install locally"
+	@echo "  build          - Build for the current development platform"
+	@echo "  cross-compile  - Build the linux/mipsle OpenWrt binary"
+	@echo "  compress       - Cross-compile and optionally compress with UPX"
+	@echo "  install        - Install the local development build"
 	@echo "  clean          - Clean build artifacts"
 	@echo "  test           - Run tests"
-	@echo "  release        - Create release archives"
+	@echo "  release        - Create the MIPSLE release archive"
 	@echo "  dev            - Build with race detector"
 	@echo "  fmt            - Format code"
 	@echo "  lint           - Lint code"
