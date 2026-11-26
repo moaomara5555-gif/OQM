@@ -14,7 +14,7 @@ Manage OQM in LuCI under **Network → Quota Manager**. Install both the `oqm` b
 - Daily, weekly, and monthly usage resets
 - CLI for automation and administration
 
-Messaging integrations and bot-based notifications are not supported.
+Telegram and Bale integrations and bot-based notifications have been removed.
 
 ## Install and develop
 

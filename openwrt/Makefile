@@ -35,15 +35,14 @@ define Package/oqm
 endef
 
 define Package/oqm/description
-  OQM (OpenWrt Quota Manager) is a lightweight quota management system
-  for OpenWrt routers. It monitors network usage and enforces quota limits.
+  OQM is a quota management system for OpenWrt routers. It monitors
+  network usage and enforces quota limits through a native LuCI interface.
 
   Features:
-  - Per-device quota management
+  - Per-device and shared group quotas
   - Automatic blocking when quota exceeded
   - LuCI interface and API
-  - Multi-device support per user
-  - Scheduled quota resets
+  - DHCP discovery and scheduled quota resets
 endef
 
 define Package/oqm/conffiles
@@ -61,10 +60,8 @@ endef
 define Package/oqm/install
 	$(INSTALL_DIR) $(1)/usr/bin
 	$(INSTALL_BIN) $(GO_PKG_BUILD_BIN_DIR)/oqm $(1)/usr/bin/
-
 	$(INSTALL_DIR) $(1)/etc/init.d
 	$(INSTALL_BIN) ./files/etc/init.d/oqm $(1)/etc/init.d/
-
 	$(INSTALL_DIR) $(1)/etc/oqm
 	$(INSTALL_DATA) ./files/etc/oqm/data.json $(1)/etc/oqm/
 endef
@@ -73,8 +70,8 @@ define Package/oqm/postinst
 #!/bin/sh
 if [ -z "$${IPKG_INSTROOT}" ]; then
 	echo "Enabling and starting OQM service..."
-	/ etc/init.d/oqm enable
-	/ etc/init.d/oqm start
+	/etc/init.d/oqm enable
+	/etc/init.d/oqm start
 fi
 exit 0
 endef
