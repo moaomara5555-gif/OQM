@@ -1,6 +1,6 @@
 # OQM - OpenWrt Quota Manager
 
-A lightweight quota management system for OpenWrt with a native LuCI interface, device and group quotas, automatic blocking, notifications, DHCP discovery, traffic summaries, and CLI tools.
+A lightweight quota management system for OpenWrt with a native LuCI interface, device and group quotas, automatic blocking, DHCP discovery, traffic summaries, and CLI tools.
 
 ## Interface
 
@@ -11,9 +11,10 @@ Manage OQM in LuCI under **Network → Quota Manager**. Install both the `oqm` b
 - Per-device and shared group quotas, with automatic block/unblock
 - Total traffic usage summaries and top users
 - IP or MAC device tracking and DHCP lease discovery
-- Telegram, Bale, and custom-compatible bot configuration
 - Daily, weekly, and monthly usage resets
 - CLI for automation and administration
+
+Messaging integrations and bot-based notifications are not supported.
 
 ## Install and develop
 
