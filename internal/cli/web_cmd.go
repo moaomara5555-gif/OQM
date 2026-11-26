@@ -9,13 +9,14 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// NewWebCommand creates the web command
+// NewWebCommand creates the HTTP API command used by the LuCI application.
 func NewWebCommand() *cobra.Command {
 	var port int
 
 	cmd := &cobra.Command{
 		Use:   "web",
-		Short: "Start the web UI server",
+		Short: "Start the OQM API server for LuCI",
+		Long:  "Start the OQM HTTP API used by the LuCI application. The standalone dashboard has been retired.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			store, err := storage.NewStorage(config.GetDataFilePath())
 			if err != nil {
@@ -27,7 +28,7 @@ func NewWebCommand() *cobra.Command {
 			}
 
 			server := webui.NewServer(store)
-			fmt.Printf("Starting web UI on http://0.0.0.0:%d\n", port)
+			fmt.Printf("Starting OQM API server for LuCI on http://0.0.0.0:%d\n", port)
 			return server.Start(port)
 		},
 	}
